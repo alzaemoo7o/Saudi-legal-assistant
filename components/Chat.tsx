@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { sendMessageStream } from '../services/geminiService';
 import type { Message } from '../types';
-import { GavelIcon } from './icons/GavelIcon';
+import { LawyerBotIcon } from './icons/LawyerBotIcon';
 import { UserIcon } from './icons/UserIcon';
 import { SendIcon } from './icons/SendIcon';
 
 const suggestedQuestions = [
-  "ما هي أنواع الشركات في السعودية؟",
-  "ما هي حقوق الموظف في القطاع الخاص؟",
-  "كيف يتم تسجيل علامة تجارية؟",
-  "اشرح لي نظام الأحوال الشخصية الجديد.",
+  "ما هي شروط عقد العمل محدد المدة؟",
+  "كيف يتم تأسيس شركة ذات مسؤولية محدودة؟",
+  "حقوق الحضانة في نظام الأحوال الشخصية",
+  "عقوبة الجرائم المعلوماتية في السعودية",
 ];
 
 const Chat: React.FC = () => {
@@ -72,46 +72,99 @@ const Chat: React.FC = () => {
     handleSendMessage();
   }
 
+  // Simple formatter to handle bolding and lists without heavy external libraries
+  const renderMessageContent = (text: string) => {
+    const lines = text.split('\n');
+    return lines.map((line, i) => {
+      // Handle Bullet points
+      const isBullet = line.trim().startsWith('-') || line.trim().startsWith('*');
+      const cleanLine = isBullet ? line.trim().substring(1) : line;
+      
+      // Parse Bold **text**
+      const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
+      
+      return (
+        <div key={i} className={`min-h-[1.5em] ${isBullet ? 'flex items-start gap-2 my-1' : 'my-0.5'}`}>
+          {isBullet && <span className="text-emerald-500 mt-1.5 text-[8px] flex-shrink-0">●</span>}
+          <p className={`${isBullet ? 'flex-1' : ''}`}>
+            {parts.map((part, j) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={j} className="font-bold text-emerald-900">{part.slice(2, -2)}</strong>;
+              }
+              return part;
+            })}
+          </p>
+        </div>
+      );
+    });
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md flex flex-col h-[80vh] max-h-[800px]">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">المحامي - مساعدك القانوني</h2>
-        <GavelIcon className="w-8 h-8 text-emerald-500" />
+    <div className="bg-white rounded-xl shadow-xl border border-gray-100 flex flex-col h-[80vh] max-h-[800px]">
+      <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-l from-emerald-50 to-white rounded-t-xl">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">المحامي الذكي</h2>
+          <p className="text-xs text-emerald-600 font-medium">متصل • جاهز للاستشارات السعودية</p>
+        </div>
+        <div className="bg-emerald-100 p-2 rounded-full">
+          <LawyerBotIcon className="w-6 h-6 text-emerald-600" />
+        </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-        <div className="space-y-4">
+      <div className="flex-1 p-4 overflow-y-auto bg-gray-50 scroll-smooth">
+        <div className="space-y-6">
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-              {msg.sender === 'bot' && <GavelIcon className="w-8 h-8 flex-shrink-0 text-gray-400 p-1 bg-gray-200 rounded-full" />}
-              <div className={`max-w-xl p-3 rounded-lg shadow-sm ${msg.sender === 'user' ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'}`}>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+            <div key={msg.id} className={`flex items-end gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {msg.sender === 'bot' && (
+                <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm flex-shrink-0">
+                   <LawyerBotIcon className="w-5 h-5 text-emerald-600" />
+                </div>
+              )}
+              
+              <div className={`max-w-[85%] lg:max-w-[75%] p-4 rounded-2xl shadow-sm ${
+                msg.sender === 'user' 
+                  ? 'bg-emerald-600 text-white rounded-br-none' 
+                  : 'bg-white text-gray-700 rounded-bl-none border border-gray-100'
+              }`}>
+                <div className="text-sm leading-relaxed">
+                  {msg.sender === 'user' ? msg.text : renderMessageContent(msg.text)}
+                </div>
               </div>
-              {msg.sender === 'user' && <UserIcon className="w-8 h-8 flex-shrink-0 text-white p-1 bg-emerald-600 rounded-full" />}
+              
+              {msg.sender === 'user' && (
+                <div className="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center shadow-sm flex-shrink-0">
+                  <UserIcon className="w-5 h-5 text-emerald-100" />
+                </div>
+              )}
             </div>
           ))}
+          
           {isLoading && messages[messages.length-1]?.sender === 'bot' && messages[messages.length - 1]?.text === '' && (
-             <div className="flex items-start gap-3 justify-start">
-                <GavelIcon className="w-8 h-8 flex-shrink-0 text-gray-400 p-1 bg-gray-200 rounded-full" />
-                <div className="max-w-md p-3 rounded-lg bg-white border border-gray-200 text-gray-800 rounded-bl-none flex items-center space-x-2">
-                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-pulse delay-75"></span>
-                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-pulse delay-150"></span>
-                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-pulse delay-300"></span>
+             <div className="flex items-end gap-3 justify-start">
+                <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+                   <LawyerBotIcon className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div className="p-4 rounded-2xl rounded-bl-none bg-white border border-gray-100 shadow-sm">
+                    <div className="flex space-x-1 space-x-reverse">
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce delay-75"></div>
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce delay-150"></div>
+                    </div>
                 </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
         
-        {messages.length === 1 && !isLoading && (
-          <div className="mt-6">
-            <p className="text-sm text-center text-gray-500 mb-3">أو يمكنك تجربة أحد هذه الأسئلة الشائعة:</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {messages.length <= 1 && !isLoading && (
+          <div className="mt-8">
+            <p className="text-xs text-center text-gray-400 mb-4">أمثلة على ما يمكنك سؤاله</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-4">
               {suggestedQuestions.map((q, i) => (
                 <button 
                   key={i} 
                   onClick={() => handleSendMessage(q)} 
-                  className="w-full text-right p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-emerald-300 transition-all text-sm text-gray-700">
+                  className="text-right p-3.5 bg-white border border-emerald-100 hover:border-emerald-400 hover:shadow-md rounded-xl transition-all text-sm text-gray-600 hover:text-emerald-700">
                   {q}
                 </button>
               ))}
@@ -120,26 +173,31 @@ const Chat: React.FC = () => {
         )}
       </div>
 
-      <div className="p-4 border-t border-gray-200 bg-white">
-        <form onSubmit={handleFormSubmit} className="flex items-center space-x-2 rtl:space-x-reverse">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="اكتب سؤالك القانوني هنا..."
-            className="flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            disabled={isLoading}
-            dir="auto"
-          />
+      <div className="p-4 bg-white border-t border-gray-100 rounded-b-xl">
+        <form onSubmit={handleFormSubmit} className="flex items-center gap-3">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="اكتب سؤالك القانوني هنا..."
+              className="w-full p-4 pl-4 pr-5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400"
+              disabled={isLoading}
+              dir="auto"
+            />
+          </div>
           <button
             type="submit"
             disabled={isLoading || input.trim() === ''}
-            className="p-3 bg-emerald-600 text-white rounded-full disabled:bg-gray-400 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors"
+            className="p-4 bg-emerald-600 text-white rounded-2xl disabled:bg-gray-200 disabled:cursor-not-allowed hover:bg-emerald-700 active:scale-95 transition-all shadow-lg shadow-emerald-200"
             aria-label="Send message"
           >
             <SendIcon className="w-6 h-6" />
           </button>
         </form>
+        <div className="text-center mt-2">
+          <p className="text-[10px] text-gray-400">المحامي الذكي قد يرتكب أخطاء. يرجى مراجعة المعلومات الهامة.</p>
+        </div>
       </div>
     </div>
   );

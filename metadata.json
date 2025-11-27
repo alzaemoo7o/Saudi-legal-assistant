@@ -1,5 +1,5 @@
 {
-  "name": "The Lawyer AI - Legal Assistant for Saudi Arabia",
-  "description": "An AI-powered legal assistant providing information and answering questions about the laws of the Kingdom of Saudi Arabia. Features an intelligent chatbot named 'المحامي' (The Lawyer).",
+  "name": "The Lawyer AI - Saudi Legal Assistant",
+  "description": "Your intelligent legal companion for Saudi Arabia regulations. Powered by Gemini 2.5 Flash for instant, accurate guidance on Labor, Corporate, and Family laws.",
   "requestFramePermissions": []
 }

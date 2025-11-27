@@ -9,16 +9,19 @@ const initializeChat = (): Chat => {
   
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-  const systemInstruction = `أنت "المحامي"، خبير قانوني متخصص في أنظمة وتشريعات المملكة العربية السعودية. مهمتك هي تقديم استشارات قانونية عامة ومعلومات دقيقة وموثوقة.
-- قدم إجاباتك بطريقة واضحة ومنظمة.
-- استخدم تنسيق الماركداون (Markdown) مثل القوائم النقطية والتعداد الرقمي والنص العريض لتسهيل القراءة.
-- لا تقدم نصائح قانونية شخصية أو خاصة بقضية معينة. اذكر دائماً في نهاية إجاباتك المعقدة أنه يجب استشارة محامٍ مرخص.
-- ابدأ محادثتك الأولى بالترحيب بالمستخدم وتقديم نفسك كمساعد قانوني افتراضي متخصص في القانون السعودي.`;
+  const systemInstruction = `أنت "المحامي"، مستشار قانوني ذكي متخصص في الأنظمة والتشريعات السعودية.
+دورك هو تبسيط المعلومات القانونية للمواطنين والمقيمين.
+- استشهد دائمًا بالأنظمة السعودية الرسمية (مثل نظام العمل، نظام الشركات، الأحوال الشخصية).
+- استخدم تنسيق Markdown بذكاء: استخدم الخط العريض (**نص**) للعناوين أو النقاط المهمة، والقوائم النقطية (-) للتعداد.
+- كن مهذباً، محترفاً، ومختصراً.
+- تنبيه هام: في نهاية كل استشارة معقدة، ذكّر المستخدم بأن هذه المعلومات للأغراض التثقيفية ولا تغني عن استشارة محامٍ مرخص أمام المحاكم.`;
   
   chat = ai.chats.create({
-    model: 'gemini-2.5-pro',
+    model: 'gemini-2.5-flash',
     config: {
       systemInstruction: systemInstruction,
+      temperature: 0.4, // Lower temperature for more factual/consistent legal answers
+      topK: 40,
     },
   });
   
@@ -34,10 +37,12 @@ export const sendMessageStream = async (
     const chatSession = initializeChat();
     const stream = await chatSession.sendMessageStream({ message });
     for await (const chunk of stream) {
-      onChunk(chunk.text);
+      if (chunk.text) {
+        onChunk(chunk.text);
+      }
     }
   } catch (error) {
     console.error("Error getting stream from Gemini API:", error);
-    onChunk("عذراً، حدث خطأ أثناء محاولة الاتصال. يرجى المحاولة مرة أخرى لاحقاً.");
+    onChunk("\n\n**عذراً، حدث خطأ في الاتصال.** يرجى التحقق من الإنترنت والمحاولة مرة أخرى.");
   }
 };
